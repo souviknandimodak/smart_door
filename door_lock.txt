@@ -1,0 +1,119 @@
+#include <Servo.h>
+#include <LiquidCrystal_I2C.h>
+#include <SPI.h>
+#include <MFRC522.h>
+
+#define SS_PIN 10
+#define RST_PIN 9
+String UID = "AB 98 D1 A0";
+String UID2 = "7E 84 7D D1";
+String UID3 = "2F B0 E6 19";
+byte lock = 0;
+
+Servo servo;
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+MFRC522 rfid(SS_PIN, RST_PIN);
+
+
+void setup() {
+  Serial.begin(9600);
+  servo.write(70);
+  lcd.init();
+  lcd.backlight();
+  servo.attach(3);
+  SPI.begin();
+  rfid.PCD_Init();
+}
+
+void loop() {
+  lcd.setCursor(4, 0);
+  lcd.print("Hiii it's");
+  lcd.setCursor(1, 1);
+  lcd.print("free_thinkers..");
+
+  if ( ! rfid.PICC_IsNewCardPresent())
+    return;
+  if ( ! rfid.PICC_ReadCardSerial())
+    return;
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("wait");
+  Serial.print("NUID tag is :");
+  String ID = "";
+  String n="free thinker";
+  for (byte i = 0; i < rfid.uid.size; i++) {
+    lcd.print("-");
+    ID.concat(String(rfid.uid.uidByte[i] < 0x10 ? " 0" : " "));
+    ID.concat(String(rfid.uid.uidByte[i], HEX));
+    delay(300);
+  }
+  ID.toUpperCase();
+
+  if (ID.substring(1) == UID && lock == 0 ) {
+    servo.write(70);
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("souvik locked ");
+    delay(1500);
+    lcd.clear();
+    lock = 1;
+  } else if (ID.substring(1) == UID && lock == 1 ) {
+    servo.write(160);
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("souvik opened");
+    delay(1500);
+    lcd.setCursor(0, 0);
+    lcd.print("auto closed");
+    delay(8000);
+    servo.write(50);
+
+    lcd.clear();
+    lock = 0;
+  } else if (ID.substring(1) == UID2 && lock == 0 ) {
+    servo.write(50);
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Manas locked ");
+    delay(1500);
+    lcd.clear();
+    lock = 1;
+  } else if (ID.substring(1) == UID2 && lock == 1) {
+    servo.write(180);
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Manas opened");
+    delay(1500);
+    servo.write(50);
+    lcd.clear();
+    lock = 0;
+  } else if (ID.substring(1) == UID3 && lock == 0 ) {
+    servo.write(50);
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Abhisek locked ");
+    delay(1500);
+    lcd.clear();
+    lock = 1;
+  } else if (ID.substring(1) == UID3 && lock == 1 ) {
+    servo.write(180);
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Abhisek opened");
+    delay(1500);
+    lcd.clear();
+    lock = 0;
+  } else {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("its wrong");
+    delay(1500);
+    lcd.setCursor(0, 0);
+    lcd.print("put the right");
+    lcd.setCursor(0, 1);
+    lcd.print("card");
+    delay(2000);
+    lcd.clear();
+  }
+}
